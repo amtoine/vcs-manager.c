@@ -25,6 +25,7 @@ const test_case_t TEST_CASES[] = {
   { .input = "https://host/a/b.git",   .expected = { .scheme = "https", .host = "host", .path = "/a/b.git" } },
   { .input = "https://host/a/b",       .expected = { .scheme = "https", .host = "host", .path = "/a/b"     } },
   { .input = "git://host/a/b.git",     .expected = { .scheme = "git",   .host = "host", .path = "/a/b.git" } },
+  { .input = "git@host:a/b.git",       .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git" } },
   { .input = "ssh://git@host/a/b.git", .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git" } },
     // clang-format on
 };

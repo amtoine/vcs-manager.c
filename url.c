@@ -1,6 +1,7 @@
 #include <curl/curl.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "url.h"
@@ -8,12 +9,25 @@
 CURLUcode url_from_string(char *raw_url, url_t *url) {
   CURLUcode rc;
   CURLU *curl = curl_url();
-  char *field;
 
   rc = curl_url_set(curl, CURLUPART_URL, raw_url, CURLU_NON_SUPPORT_SCHEME);
   if (rc != CURLUE_OK) {
-    curl_url_cleanup(curl);
-    return rc;
+    char *extended_url = malloc(6 + strlen(raw_url) + 1);
+    sprintf(extended_url, "ssh://%s", raw_url);
+
+    // replace ":" with "/" in Git shorthand URL
+    char *colon = strchr(raw_url, ':');
+    if (colon != NULL) {
+      extended_url[colon - raw_url + 6] = '/';
+    }
+
+    CURLUcode rc_2 = curl_url_set(curl, CURLUPART_URL, extended_url,
+                                  CURLU_NON_SUPPORT_SCHEME);
+
+    if (rc_2 != CURLUE_OK) {
+      curl_url_cleanup(curl);
+      return rc_2;
+    }
   }
 
 #define __url_set(part, member)                                                \
@@ -22,6 +36,7 @@ CURLUcode url_from_string(char *raw_url, url_t *url) {
     curl_free(field);                                                          \
   }
 
+  char *field;
   __url_set(CURLUPART_URL, url);
   __url_set(CURLUPART_SCHEME, scheme);
   __url_set(CURLUPART_USER, user);
