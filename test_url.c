@@ -18,7 +18,8 @@ typedef struct {
   url_t expected;
 } test_case_t;
 
-const int NB_TEST_CASES = 4;
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
+
 const test_case_t TEST_CASES[] = {
     // clang-format off
   { .input = "https://host/a/b.git",   .expected = { .scheme = "https", .host = "host", .path = "/a/b.git" } },
@@ -34,7 +35,7 @@ int main(int argc, char *argv[]) {
 
   bool pass = true;
 
-  for (int i = 0; i < NB_TEST_CASES; i++) {
+  for (int i = 0; i < ARRAY_SIZE(TEST_CASES); i++) {
     test_case_t t = TEST_CASES[i];
     printf("%-30s... ", t.input);
 
