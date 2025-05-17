@@ -24,11 +24,12 @@ typedef struct {
 const test_case_t TEST_CASES[] = {
     // clang-format off
   { .input = "not a valid url",        .rc = CURLUE_MALFORMED_INPUT, .expected = { 0 } },
-  { .input = "https://host/a/b.git",   .rc = CURLUE_OK,              .expected = { .scheme = "https", .host = "host", .path = "/a/b.git" } },
-  { .input = "https://host/a/b",       .rc = CURLUE_OK,              .expected = { .scheme = "https", .host = "host", .path = "/a/b"     } },
-  { .input = "git://host/a/b.git",     .rc = CURLUE_OK,              .expected = { .scheme = "git",   .host = "host", .path = "/a/b.git" } },
-  { .input = "git@host:a/b.git",       .rc = CURLUE_OK,              .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git" } },
-  { .input = "ssh://git@host/a/b.git", .rc = CURLUE_OK,              .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git" } },
+  { .input = "foo",                    .rc = CURLUE_OK,              .expected = { .scheme = "ssh",   .host = "foo",  .path = "/",        .shorthand =  true } },
+  { .input = "https://host/a/b.git",   .rc = CURLUE_OK,              .expected = { .scheme = "https", .host = "host", .path = "/a/b.git", .shorthand = false } },
+  { .input = "https://host/a/b",       .rc = CURLUE_OK,              .expected = { .scheme = "https", .host = "host", .path = "/a/b",     .shorthand = false } },
+  { .input = "git://host/a/b.git",     .rc = CURLUE_OK,              .expected = { .scheme = "git",   .host = "host", .path = "/a/b.git", .shorthand = false } },
+  { .input = "git@host:a/b.git",       .rc = CURLUE_OK,              .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git", .shorthand =  true } },
+  { .input = "ssh://git@host/a/b.git", .rc = CURLUE_OK,              .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git", .shorthand = false } },
     // clang-format on
 };
 
@@ -37,6 +38,14 @@ const test_case_t TEST_CASES[] = {
     printf("fail (%s: expected %s / actual %s)", field, expected, actual);     \
     pass = false;                                                              \
   } while (0)
+
+char *bool_to_str(bool b) {
+  if (b) {
+    return "true";
+  } else {
+    return "false";
+  }
+}
 
 int main(int argc, char *argv[]) {
   url_t url;
@@ -60,6 +69,9 @@ int main(int argc, char *argv[]) {
         fail("host", url.host, t.expected.host);
       } else if (strcmp(url.path, t.expected.path) != 0) {
         fail("path", url.path, t.expected.path);
+      } else if (url.shorthand != t.expected.shorthand) {
+        fail("shorthand", bool_to_str(url.shorthand),
+             bool_to_str(t.expected.shorthand));
       } else {
         printf("pass");
       }
