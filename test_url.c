@@ -1,3 +1,6 @@
+#ifndef COLOR_NONE
+#include "ANSI-color-codes.h"
+#endif // COLOR_NONE
 #include "url.h"
 
 #include <stdbool.h>
@@ -33,11 +36,22 @@ const test_case_t TEST_CASES[] = {
     // clang-format on
 };
 
-#define fail(field, actual, expected)                                          \
+#ifndef COLOR_NONE
+#define test_pass printf("%spass%s", BGRN, CRESET)
+#define test_fail(field, actual, expected)                                     \
+  do {                                                                         \
+    printf("%sfail%s (%s%s%s: expected %s%s%s / actual %s%s%s)", BRED, CRESET, \
+           CYN, field, CRESET, BGRN, expected, CRESET, BRED, actual, CRESET);  \
+    pass = false;                                                              \
+  } while (0)
+#else // COLOR_NONE
+#define test_pass printf("pass")
+#define test_fail(field, actual, expected)                                     \
   do {                                                                         \
     printf("fail (%s: expected %s / actual %s)", field, expected, actual);     \
     pass = false;                                                              \
   } while (0)
+#endif // COLOR_NONE
 
 char *bool_to_str(bool b) {
   if (b) {
@@ -61,22 +75,22 @@ int main(int argc, char *argv[]) {
     rc = url_from_string(t.input, &url);
 
     if (t.rc != rc) {
-      fail("rc", curlucode_to_string(rc), curlucode_to_string(t.rc));
+      test_fail("rc", curlucode_to_string(rc), curlucode_to_string(t.rc));
     } else if (rc == CURLUE_OK) {
       if (strcmp(url.scheme, t.expected.scheme) != 0) {
-        fail("scheme", url.scheme, t.expected.scheme);
+        test_fail("scheme", url.scheme, t.expected.scheme);
       } else if (strcmp(url.host, t.expected.host) != 0) {
-        fail("host", url.host, t.expected.host);
+        test_fail("host", url.host, t.expected.host);
       } else if (strcmp(url.path, t.expected.path) != 0) {
-        fail("path", url.path, t.expected.path);
+        test_fail("path", url.path, t.expected.path);
       } else if (url.shorthand != t.expected.shorthand) {
-        fail("shorthand", bool_to_str(url.shorthand),
-             bool_to_str(t.expected.shorthand));
+        test_fail("shorthand", bool_to_str(url.shorthand),
+                  bool_to_str(t.expected.shorthand));
       } else {
-        printf("pass");
+        test_pass;
       }
     } else {
-      printf("pass");
+      test_pass;
     }
 
     printf("\n");
