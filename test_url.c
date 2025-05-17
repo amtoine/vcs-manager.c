@@ -15,6 +15,7 @@ url_t build_url(char *scheme, char *host, char *path) {
 
 typedef struct {
   char *input;
+  CURLUcode rc;
   url_t expected;
 } test_case_t;
 
@@ -22,13 +23,20 @@ typedef struct {
 
 const test_case_t TEST_CASES[] = {
     // clang-format off
-  { .input = "https://host/a/b.git",   .expected = { .scheme = "https", .host = "host", .path = "/a/b.git" } },
-  { .input = "https://host/a/b",       .expected = { .scheme = "https", .host = "host", .path = "/a/b"     } },
-  { .input = "git://host/a/b.git",     .expected = { .scheme = "git",   .host = "host", .path = "/a/b.git" } },
-  { .input = "git@host:a/b.git",       .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git" } },
-  { .input = "ssh://git@host/a/b.git", .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git" } },
+  { .input = "not a valid url",        .rc = CURLUE_MALFORMED_INPUT, .expected = { 0 } },
+  { .input = "https://host/a/b.git",   .rc = CURLUE_OK,              .expected = { .scheme = "https", .host = "host", .path = "/a/b.git" } },
+  { .input = "https://host/a/b",       .rc = CURLUE_OK,              .expected = { .scheme = "https", .host = "host", .path = "/a/b"     } },
+  { .input = "git://host/a/b.git",     .rc = CURLUE_OK,              .expected = { .scheme = "git",   .host = "host", .path = "/a/b.git" } },
+  { .input = "git@host:a/b.git",       .rc = CURLUE_OK,              .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git" } },
+  { .input = "ssh://git@host/a/b.git", .rc = CURLUE_OK,              .expected = { .scheme = "ssh",   .host = "host", .path = "/a/b.git" } },
     // clang-format on
 };
+
+#define fail(field, actual, expected)                                          \
+  do {                                                                         \
+    printf("fail (%s: expected %s / actual %s)", field, expected, actual);     \
+    pass = false;                                                              \
+  } while (0)
 
 int main(int argc, char *argv[]) {
   url_t url;
@@ -43,18 +51,18 @@ int main(int argc, char *argv[]) {
     url = (url_t){0};
     rc = url_from_string(t.input, &url);
 
-    if (rc != CURLUE_OK) {
-      printf("fail (%s)", curlucode_to_string(rc));
-      pass = false;
-    } else if (strcmp(url.scheme, t.expected.scheme) != 0) {
-      printf("fail (%s: %s / %s)", "scheme", url.scheme, t.expected.scheme);
-      pass = false;
-    } else if (strcmp(url.host, t.expected.host) != 0) {
-      printf("fail (%s: %s / %s)", "host", url.host, t.expected.host);
-      pass = false;
-    } else if (strcmp(url.path, t.expected.path) != 0) {
-      printf("fail (%s: %s / %s)", "path", url.path, t.expected.path);
-      pass = false;
+    if (t.rc != rc) {
+      fail("rc", curlucode_to_string(rc), curlucode_to_string(t.rc));
+    } else if (rc == CURLUE_OK) {
+      if (strcmp(url.scheme, t.expected.scheme) != 0) {
+        fail("scheme", url.scheme, t.expected.scheme);
+      } else if (strcmp(url.host, t.expected.host) != 0) {
+        fail("host", url.host, t.expected.host);
+      } else if (strcmp(url.path, t.expected.path) != 0) {
+        fail("path", url.path, t.expected.path);
+      } else {
+        printf("pass");
+      }
     } else {
       printf("pass");
     }
