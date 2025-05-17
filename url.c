@@ -10,6 +10,8 @@ CURLUcode url_from_string(char *raw_url, url_t *url) {
   CURLUcode rc;
   CURLU *curl = curl_url();
 
+  url->shorthand = false;
+
   rc = curl_url_set(curl, CURLUPART_URL, raw_url, CURLU_NON_SUPPORT_SCHEME);
   if (rc != CURLUE_OK) {
     char *extended_url = malloc(6 + strlen(raw_url) + 1);
@@ -27,6 +29,8 @@ CURLUcode url_from_string(char *raw_url, url_t *url) {
     if (rc_2 != CURLUE_OK) {
       curl_url_cleanup(curl);
       return rc_2;
+    } else {
+      url->shorthand = true;
     }
   }
 
@@ -75,6 +79,13 @@ void url_print(url_t url) {
   __url_print_field(url, query);
   __url_print_field(url, fragment);
   __url_print_field(url, zoneid);
+  printf("    %-10s:", "shorthand");
+  if (url.shorthand) {
+    printf(" true");
+  } else {
+    printf(" false");
+  }
+  printf("\n");
   printf("}\n");
 }
 

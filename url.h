@@ -1,4 +1,5 @@
 #include <curl/curl.h>
+#include <stdbool.h>
 
 typedef struct {
   char *url;
@@ -12,6 +13,7 @@ typedef struct {
   char *query;
   char *fragment;
   char *zoneid;
+  bool shorthand;
 } url_t;
 
 // `.url` will be `NULL` if the URL could not be parsed
