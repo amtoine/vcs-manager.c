@@ -1,8 +1,11 @@
+#include "dynamic_array.h"
+#include "find.h"
+#include "macros.h"
 #include "url.h"
 
-#include <curl/urlapi.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 
 CURLUcode url_to_string(url_t url, char **str) {
   CURLU *curlu = curl_url();
@@ -27,18 +30,22 @@ CURLUcode url_to_string(url_t url, char **str) {
   return ret;
 }
 
-int main(int argc, char *argv[]) {
+void list(char *path) {
+  da_str_t repos = find_git(path);
+  da_foreach(char *, r, &repos) { printf("%s\n", *r); }
+  da_free(&repos);
+}
+
+int clone(char *path, char *raw_url, char *fetch_protocol,
+          char *push_protocol) {
   url_t url;
   CURLUcode rc;
 
   url = (url_t){0};
-  rc = url_from_string(argv[1], &url);
+  rc = url_from_string(raw_url, &url);
   if (rc != CURLUE_OK || url.url == NULL) {
     return rc;
   }
-
-  char *fetch_protocol = "https";
-  char *push_protocol = "ssh";
 
   url_t fetch = {0};
   fetch.scheme = fetch_protocol;
@@ -61,6 +68,47 @@ int main(int argc, char *argv[]) {
   }
   printf("fetch: %s\n", fetch_str);
   printf("push: %s\n", push_str);
+
+  return 0;
+}
+
+#define shift(c, v)                                                            \
+  do {                                                                         \
+    c--;                                                                       \
+    v++;                                                                       \
+  } while (0)
+
+int main(int argc, char *argv[]) {
+  shift(argc, argv);
+  if (argc == 0) {
+    panic("no command\n");
+  }
+
+  char root[1024];
+  sprintf(root, "%s/documents/foo/", getenv("HOME"));
+  struct stat st = {0};
+  if (stat(root, &st) == -1) {
+    printf("creating root %s", root);
+    mkdir(root, 0700);
+  }
+
+  if (strcmp(argv[0], "list") == 0) {
+    shift(argc, argv);
+    if (argc > 0) {
+      panic("list: too many arguments\n");
+    }
+    list(root);
+  } else if (strcmp(argv[0], "clone") == 0) {
+    shift(argc, argv);
+    if (argc == 0) {
+      panic("clone: not enough arguments\n");
+    } else if (argc > 1) {
+      panic("clone: too many arguments\n");
+    }
+    clone(root, argv[0], "https", "ssh");
+  } else {
+    panic("%s: unknown command\n", argv[0]);
+  }
 
   return EXIT_SUCCESS;
 }
