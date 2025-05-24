@@ -7,6 +7,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#define ROOT "%s/documents/foo"
+
 CURLUcode url_to_string(url_t url, char **str) {
   CURLU *curlu = curl_url();
   int ret;
@@ -85,7 +87,7 @@ int main(int argc, char *argv[]) {
   }
 
   char root[1024];
-  sprintf(root, "%s/documents/foo/", getenv("HOME"));
+  sprintf(root, ROOT "/", getenv("HOME"));
   struct stat st = {0};
   if (stat(root, &st) == -1) {
     printf("creating root %s\n", root);
