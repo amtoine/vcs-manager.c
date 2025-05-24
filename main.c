@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   sprintf(root, "%s/documents/foo/", getenv("HOME"));
   struct stat st = {0};
   if (stat(root, &st) == -1) {
-    printf("creating root %s", root);
+    printf("creating root %s\n", root);
     mkdir(root, 0700);
   }
 
