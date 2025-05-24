@@ -4,7 +4,7 @@
 #define panic(...)                                                             \
   do {                                                                         \
     fprintf(stderr, __VA_ARGS__);                                              \
-    return EXIT_FAILURE;                                                       \
+    exit(EXIT_FAILURE);                                                        \
   } while (0)
 #define error(...)                                                             \
   do {                                                                         \
@@ -14,5 +14,5 @@
 #define unreachable(message)                                                   \
   do {                                                                         \
     fprintf(stderr, "%s:%d: UNREACHABLE: %s\n", __FILE__, __LINE__, message);  \
-    return EXIT_FAILURE;                                                       \
+    exit(EXIT_FAILURE);                                                        \
   } while (0)
