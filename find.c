@@ -1,0 +1,90 @@
+#include <dirent.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "dynamic_array.h"
+#include "find.h"
+
+#ifdef DEBUG
+#define log_infoln(fmt, ...) printf("INFO: " fmt "\n", ##__VA_ARGS__)
+#else // DEBUG
+#define log_infoln(fmt, ...) ((void)0)
+#endif // DEBUG
+
+// list all files and directories at a given path
+da_str_t ls(const char *path) {
+  DIR *dp = opendir(path);
+  if (dp == NULL) {
+    if (errno == ENOTDIR) {
+      return (da_str_t){0};
+    }
+    perror("opendir");
+    exit(EXIT_FAILURE);
+  }
+
+  da_str_t files = {0};
+  struct dirent *entry;
+  while ((entry = readdir(dp))) {
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+      continue;
+    }
+    da_append(&files, strdup(entry->d_name));
+  }
+
+  closedir(dp);
+
+  return files;
+}
+
+// concatenate two strings
+//
+// `concat` will allocate memory, it is the caller's responsibility to free it.
+char *concat(const char *s1, const char *s2) {
+  char *result = malloc(strlen(s1) + strlen(s2) + 1);
+  strcpy(result, s1);
+  strcat(result, s2);
+  return result;
+}
+
+// find all Git repositories under at a given path
+da_str_t find_git(const char *path) {
+  log_infoln("current: %s", path);
+
+  da_str_t next = ls(path);
+  if (next.size == 0) {
+    log_infoln("\tfile or empty directory");
+    return (da_str_t){0};
+  }
+
+  bool is_repo = false;
+  da_foreach(char *, f, &next) {
+    log_infoln("\t\tnext: %s", *f);
+    if (strcmp(*f, ".git") == 0) {
+      is_repo = true;
+    } else if (strcmp(*f, "HEAD") == 0) {
+      is_repo = true;
+    }
+  }
+
+  da_str_t repos = {0};
+
+  if (is_repo) {
+    log_infoln("\trepo");
+    da_append(&repos, (char *)path);
+  } else {
+    log_infoln("\tNOT a repo");
+    da_foreach(char *, f, &next) {
+      // FIXME: memory leak from `concat`
+      da_str_t res = find_git(concat(concat(path, "/"), *f));
+      da_foreach(char *, r, &res) { da_append(&repos, *r); }
+      da_free(&res);
+    }
+  }
+
+  da_foreach(char *, f, &next) { free(*f); }
+  da_free(&next);
+
+  return repos;
+}
