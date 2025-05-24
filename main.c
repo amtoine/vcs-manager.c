@@ -1,3 +1,4 @@
+#include "cmd.h"
 #include "dynamic_array.h"
 #include "find.h"
 #include "macros.h"
@@ -68,8 +69,49 @@ int clone(char *path, char *raw_url, char *fetch_protocol,
   if (rc != CURLUE_OK) {
     return rc;
   }
-  printf("fetch: %s\n", fetch_str);
-  printf("push: %s\n", push_str);
+
+  char dest[1024];
+  // NOTE: the host alreay has a leading /
+  sprintf(dest, "%s/%s%s", path, url.host, url.path);
+
+  cmd_t cmd = {0};
+  cmd_error_t ret;
+
+  da_append(&cmd, "git");
+  da_append(&cmd, "clone");
+  da_append(&cmd, fetch_str);
+  da_append(&cmd, dest);
+  ret = cmd_run_sync(cmd);
+  if (ret.kind != CMD_ERROR_KIND_OK) {
+    panic("");
+  }
+
+  cmd.size = 0;
+  da_append(&cmd, "git");
+  da_append(&cmd, "-C");
+  da_append(&cmd, dest);
+  da_append(&cmd, "remote");
+  da_append(&cmd, "set-url");
+  da_append(&cmd, "origin");
+  da_append(&cmd, fetch_str);
+  ret = cmd_run_sync(cmd);
+  if (ret.kind != CMD_ERROR_KIND_OK) {
+    panic("");
+  }
+
+  cmd.size = 0;
+  da_append(&cmd, "git");
+  da_append(&cmd, "-C");
+  da_append(&cmd, dest);
+  da_append(&cmd, "remote");
+  da_append(&cmd, "set-url");
+  da_append(&cmd, "origin");
+  da_append(&cmd, push_str);
+  da_append(&cmd, "--push");
+  ret = cmd_run_sync(cmd);
+  if (ret.kind != CMD_ERROR_KIND_OK) {
+    panic("");
+  }
 
   return 0;
 }
@@ -87,7 +129,8 @@ int main(int argc, char *argv[]) {
   }
 
   char root[1024];
-  sprintf(root, ROOT "/", getenv("HOME"));
+  // NOTE: do not add an extra trailing /
+  sprintf(root, ROOT, getenv("HOME"));
   struct stat st = {0};
   if (stat(root, &st) == -1) {
     printf("creating root %s\n", root);
