@@ -16,8 +16,14 @@ void list(char *path) {
   da_free(&repos);
 }
 
-int clone(char *path, char *raw_url, char *fetch_protocol,
-          char *push_protocol) {
+int clone(
+    /* clang-format off */
+  char *path,           // where to clone
+  char *raw_url,        // what to clone
+  char *fetch_protocol, // how to fetch (defaults to the scheme of the URL if NULL)
+  char *push_protocol   // how to push (defaults to the scheme of the URL if NULL)
+    /* clang-format on */
+) {
   url_t url;
   CURLUcode rc;
 
