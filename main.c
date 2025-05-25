@@ -10,29 +10,6 @@
 
 #define ROOT "%s/documents/foo"
 
-CURLUcode url_to_string(url_t url, char **str) {
-  CURLU *curlu = curl_url();
-  int ret;
-
-  ret = curl_url_set(curlu, CURLUPART_SCHEME, url.scheme,
-                     CURLU_NON_SUPPORT_SCHEME);
-  if (ret != CURLUE_OK) {
-    return ret;
-  }
-  ret = curl_url_set(curlu, CURLUPART_HOST, url.host, 0);
-  if (ret != CURLUE_OK) {
-    return ret;
-  }
-  ret = curl_url_set(curlu, CURLUPART_PATH, url.path, 0);
-  if (ret != CURLUE_OK) {
-    return ret;
-  }
-
-  curl_url_get(curlu, CURLUPART_URL, str, 0);
-
-  return ret;
-}
-
 void list(char *path) {
   da_str_t repos = find_git(path);
   da_foreach(char *, r, &repos) { printf("%s\n", *r); }

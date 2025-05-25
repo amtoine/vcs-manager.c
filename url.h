@@ -20,5 +20,6 @@ typedef struct {
 
 // `.url` will be `NULL` if the URL could not be parsed
 CURLUcode url_from_string(char *, url_t *);
+CURLUcode url_to_string(url_t url, char **str);
 void url_print(url_t);
 char *curlucode_to_string(CURLUcode);
