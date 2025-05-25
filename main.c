@@ -105,22 +105,24 @@ int main(int argc, char *argv[]) {
     mkdir(root, 0700);
   }
 
-  if (strcmp(argv[0], "list") == 0) {
+  char *subcommand = argv[0];
+  if (strcmp(subcommand, "list") == 0) {
     shift(argc, argv);
     if (argc > 0) {
       panic("list: too many arguments\n");
     }
     list(root);
-  } else if (strcmp(argv[0], "clone") == 0) {
+  } else if (strcmp(subcommand, "clone") == 0) {
     shift(argc, argv);
     if (argc == 0) {
       panic("clone: not enough arguments\n");
     } else if (argc > 1) {
       panic("clone: too many arguments\n");
     }
-    clone(root, argv[0], "https", "ssh");
+    char *remote = argv[0];
+    clone(root, remote, "https", "ssh");
   } else {
-    panic("%s: unknown command\n", argv[0]);
+    panic("%s: unknown command\n", subcommand);
   }
 
   return EXIT_SUCCESS;
