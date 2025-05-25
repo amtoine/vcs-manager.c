@@ -28,11 +28,20 @@ int clone(char *path, char *raw_url, char *fetch_protocol,
   }
 
   url_t fetch = {0};
-  fetch.scheme = fetch_protocol;
+  if (fetch_protocol == NULL) {
+    fetch.scheme = url.scheme;
+  } else {
+    fetch.scheme = fetch_protocol;
+  }
   fetch.host = url.host;
   fetch.path = url.path;
+
   url_t push = {0};
-  push.scheme = push_protocol;
+  if (push_protocol == NULL) {
+    push.scheme = url.scheme;
+  } else {
+    push.scheme = push_protocol;
+  }
   push.host = url.host;
   push.path = url.path;
 
@@ -90,11 +99,22 @@ int clone(char *path, char *raw_url, char *fetch_protocol,
     v++;                                                                       \
   } while (0)
 
+void *__pop(int *c, void ***v) {
+  void *ret = *v[0];
+  *c = *c - 1;
+  *v = *v + 1;
+  return ret;
+}
+
+#define pop(c, v) ({ __pop(&c, (void ***)&v); })
+
 int main(int argc, char *argv[]) {
   shift(argc, argv);
   if (argc == 0) {
     panic("no command\n");
   }
+
+  char *subcommand = pop(argc, argv);
 
   char root[1024];
   // NOTE: do not add an extra trailing /
@@ -105,22 +125,52 @@ int main(int argc, char *argv[]) {
     mkdir(root, 0700);
   }
 
-  char *subcommand = argv[0];
   if (strcmp(subcommand, "list") == 0) {
-    shift(argc, argv);
     if (argc > 0) {
       panic("list: too many arguments\n");
     }
     list(root);
   } else if (strcmp(subcommand, "clone") == 0) {
-    shift(argc, argv);
-    if (argc == 0) {
-      panic("clone: not enough arguments\n");
-    } else if (argc > 1) {
-      panic("clone: too many arguments\n");
+    char *fetch_protocol = NULL;
+    char *push_protocol = NULL;
+    char *remote = NULL;
+    while (argc > 0) {
+      char *arg = pop(argc, argv);
+      if (strncmp(arg, "-f", 2) == 0 || strncmp(arg, "--fetch", 7) == 0) {
+        char *value = pop(argc, argv);
+        if (strncmp(value, "-", 1) == 0) {
+          panic("clone: '%s' looks like an option given to %s\n", value, arg);
+        }
+        if (fetch_protocol != NULL) {
+          panic("clone: '%s' has already been set to %s\n", arg,
+                fetch_protocol);
+        }
+        if (strcmp(value, "https") != 0 && strcmp(value, "ssh") != 0) {
+          panic("clone: invalid protocol '%s' given to %s\n", value, arg);
+        }
+        fetch_protocol = value;
+      } else if (strncmp(arg, "-p", 2) == 0 || strncmp(arg, "--push", 6) == 0) {
+        char *value = pop(argc, argv);
+        if (strncmp(value, "-", 1) == 0) {
+          panic("clone: '%s' looks like an option given to %s\n", value, arg);
+        }
+        if (push_protocol != NULL) {
+          panic("clone: '%s' has already been set to %s\n", arg, push_protocol);
+        }
+        if (strcmp(value, "https") != 0 && strcmp(value, "ssh") != 0) {
+          panic("clone: invalid protocol '%s' given to %s\n", value, arg);
+        }
+        push_protocol = value;
+      } else if (remote == NULL) {
+        remote = arg;
+      } else {
+        panic("clone: too many arguments\n");
+      }
     }
-    char *remote = argv[0];
-    clone(root, remote, "https", "ssh");
+    if (remote == NULL) {
+      panic("clone: missing URL\n");
+    }
+    clone(root, remote, fetch_protocol, push_protocol);
   } else {
     panic("%s: unknown command\n", subcommand);
   }
