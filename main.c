@@ -54,37 +54,28 @@ int clone(char *path, char *raw_url, char *fetch_protocol,
   cmd_t cmd = {0};
   cmd_error_t ret;
 
-  da_append(&cmd, "git");
-  da_append(&cmd, "clone");
-  da_append(&cmd, fetch_str);
-  da_append(&cmd, dest);
+  char *git_clone[] = {"git", "clone", fetch_str, dest};
+  da_append_many(&cmd, git_clone, 4);
   ret = cmd_run_sync(cmd);
   if (ret.kind != CMD_ERROR_KIND_OK) {
     panic("");
   }
-
   cmd.size = 0;
-  da_append(&cmd, "git");
-  da_append(&cmd, "-C");
-  da_append(&cmd, dest);
-  da_append(&cmd, "remote");
-  da_append(&cmd, "set-url");
-  da_append(&cmd, "origin");
-  da_append(&cmd, fetch_str);
+
+  char *git_remote_set_url_fetch[] = {
+      "git", "-C", dest, "remote", "set-url", "origin", fetch_str,
+  };
+  da_append_many(&cmd, git_remote_set_url_fetch, 7);
   ret = cmd_run_sync(cmd);
   if (ret.kind != CMD_ERROR_KIND_OK) {
     panic("");
   }
-
   cmd.size = 0;
-  da_append(&cmd, "git");
-  da_append(&cmd, "-C");
-  da_append(&cmd, dest);
-  da_append(&cmd, "remote");
-  da_append(&cmd, "set-url");
-  da_append(&cmd, "origin");
-  da_append(&cmd, push_str);
-  da_append(&cmd, "--push");
+
+  char *git_remote_set_url_push[] = {
+      "git", "-C", dest, "remote", "set-url", "origin", push_str, "--push",
+  };
+  da_append_many(&cmd, git_remote_set_url_push, 8);
   ret = cmd_run_sync(cmd);
   if (ret.kind != CMD_ERROR_KIND_OK) {
     panic("");
