@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   sprintf(root, ROOT, getenv("HOME"));
   struct stat st = {0};
   if (stat(root, &st) == -1) {
-    printf("creating root %s\n", root);
+    info("creating root %s\n", root);
     mkdir(root, 0700);
   }
 
